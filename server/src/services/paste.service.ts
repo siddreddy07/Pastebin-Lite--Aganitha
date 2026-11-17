@@ -16,11 +16,6 @@ export const createPaste = async (content: string, expiresAt?: string, maxViews?
   return paste!;
 };
 
-export const deletePaste = async (id: string) => {
-  const [deleted] = await db.delete(pastes).where(eq(pastes.id, id)).returning({ id: pastes.id });
-  return deleted ?? null;
-};
-
 // Read-only: same facts as viewPaste but never counts a view and never returns the content.
 export const getPasteStatus = async (id: string) => {
   const [paste] = await db.select().from(pastes).where(eq(pastes.id, id));

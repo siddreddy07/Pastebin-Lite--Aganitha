@@ -34,7 +34,7 @@ export type PasteStatus = {
 }
 
 // Current state of a paste. Does not count as a view.
-// "missing" = the paste no longer exists (deleted); null = the server couldn't be reached.
+// "missing" = the server has no such paste; null = the server couldn't be reached.
 export async function getPasteStatus(id: string): Promise<PasteStatus | "missing" | null> {
   try {
     const res = await fetch(`${API_URL}/pastes/${id}/stats`, { cache: "no-store" })
@@ -43,12 +43,6 @@ export async function getPasteStatus(id: string): Promise<PasteStatus | "missing
   } catch {
     return null
   }
-}
-
-// Deleting a paste that is already gone counts as success.
-export async function deletePaste(id: string): Promise<void> {
-  const res = await fetch(`${API_URL}/pastes/${id}`, { method: "DELETE" })
-  if (!res.ok && res.status !== 404) throw new Error("Could not delete the paste")
 }
 
 // Every call counts as one view.

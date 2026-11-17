@@ -7,7 +7,7 @@ import { ExternalLink, Trash2 } from "lucide-react"
 import { CopyButton } from "@/components/copy-button"
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
-import { deletePaste, getPasteStatus, type PasteStatus } from "@/lib/api"
+import { getPasteStatus, type PasteStatus } from "@/lib/api"
 import { formatTime } from "@/lib/format"
 import { loadPastes, pasteUrl, removePaste, type SavedPaste } from "@/lib/store"
 
@@ -29,22 +29,16 @@ export default function DashboardPage() {
     return () => window.removeEventListener("focus", refresh)
   }, [refresh])
 
-  async function remove(id: string) {
-    if (!window.confirm("Delete this paste? Its link will stop working.")) return
-    try {
-      await deletePaste(id)
-      removePaste(id)
-      refresh()
-    } catch {
-      window.alert("Couldn't delete the paste. Check that the server is running.")
-    }
+  function remove(id: string) {
+    removePaste(id)
+    refresh()
   }
 
   return (
     <main className="mx-auto w-full max-w-3xl px-5 pb-16">
       <h1 className="font-heading text-3xl font-semibold tracking-tight">Your pastes</h1>
       <p className="mt-2 mb-8 text-sm text-muted-foreground">
-        Pastes created in this browser. Deleting one removes its link for everyone.
+        Pastes created in this browser. Removing one here only clears it from this list.
       </p>
 
       {pastes === null ? null : pastes.length === 0 ? (
@@ -76,7 +70,7 @@ export default function DashboardPage() {
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <span>{formatTime(p.createdAt)}</span>
                     {missing ? (
-                      <Badge variant="destructive">Deleted</Badge>
+                      <Badge variant="destructive">Not found</Badge>
                     ) : expired ? (
                       <Badge variant="destructive">Expired</Badge>
                     ) : usedUp ? (
@@ -105,7 +99,7 @@ export default function DashboardPage() {
                       Open
                     </Button>
                   )}
-                  <Button type="button" variant="ghost" size="icon-sm" aria-label="Delete paste" onClick={() => remove(p.id)}>
+                  <Button type="button" variant="ghost" size="icon-sm" aria-label="Remove from list" onClick={() => remove(p.id)}>
                     <Trash2 />
                   </Button>
                 </div>
