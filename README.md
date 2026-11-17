@@ -29,10 +29,10 @@ When the server is deployed, set `NEXT_PUBLIC_API_URL` on the client to its URL.
 |---|---|---|
 | POST | `/pastes` | Create a paste. Body: `content`, optional `expires_at` (ISO date/time), optional `max_views` |
 | GET | `/pastes/:id` | Read a paste. Counts as one view; 404 once expired or out of views |
-| GET | `/pastes/:id/stats` | Views used and whether it is still active. Does not count a view |
+| POST | `/pastes/stats` | Body `{ ids: [...] }`. Views used and whether each paste is still active, in one query. Does not count a view |
 
 ## Design notes
 
 - No accounts. A paste's UUID link is the only key to it.
-- The dashboard keeps the ids of pastes created in this browser in `localStorage`, then asks `/pastes/:id/stats` for each one to show live status.
+- The dashboard keeps the ids of pastes created in this browser in `localStorage`, then sends them all to `POST /pastes/stats` in one request to show live status.
 - Views are counted in one atomic SQL update, so two people can't both take the last view.

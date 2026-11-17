@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+export const statusSchema = z.object({
+  ids: z.array(z.uuid({ error: 'ids must be valid paste ids' }), { error: 'ids must be a list' }).max(100, 'at most 100 ids at a time'),
+});
+
 export const createPasteSchema = z.object({
   content: z
     .string({ error: 'content is required' })

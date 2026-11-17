@@ -1,5 +1,5 @@
 import { v4 } from 'uuid';
-import { and,eq, gt, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, eq, gt, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import { db } from '../config/db.js';
 import { pastes } from '../schema/index.js';
 
@@ -16,22 +16,27 @@ export const createPaste = async (content: string, expiresAt?: string, maxViews?
   return paste!;
 };
 
-// Read-only: same facts as viewPaste but never counts a view and never returns the content.
-export const getPasteStatus = async (id: string) => {
-  const [paste] = await db.select().from(pastes).where(eq(pastes.id, id));
-  if (!paste) return null;
+// Read-only, one query for many pastes. Never counts a view and never returns the content.
+// Ids that don't exist are simply missing from the result.
+export const getPastesStatus = async (ids: string[]) => {
+  if (ids.length === 0) return [];
 
-  const expired = paste.expiresAt !== null && paste.expiresAt <= new Date();
-  const usedUp = paste.maxViews !== null && paste.views >= paste.maxViews;
+  const rows = await db.select().from(pastes).where(inArray(pastes.id, ids));
+  const now = new Date();
 
-  return {
-    id: paste.id,
-    views: paste.views,
-    maxViews: paste.maxViews,
-    expiresAt: paste.expiresAt,
-    createdAt: paste.createdAt,
-    active: !expired && !usedUp,
-  };
+  return rows.map((paste) => {
+    const expired = paste.expiresAt !== null && paste.expiresAt <= now;
+    const usedUp = paste.maxViews !== null && paste.views >= paste.maxViews;
+
+    return {
+      id: paste.id,
+      views: paste.views,
+      maxViews: paste.maxViews,
+      expiresAt: paste.expiresAt,
+      createdAt: paste.createdAt,
+      active: !expired && !usedUp,
+    };
+  });
 };
 
 // Atomically counts a view and returns the paste, or null if missing/expired/out of views.
