@@ -7,6 +7,7 @@ const PORT = process.env.PORT || 8080;
 
 app.use(cors());
 app.use(express.json({ limit: '1mb' })); // bigger bodies get a 413
+app.get('/health', (_req: Request, res: Response) => res.json({ status: 'ok' }));
 app.use('/pastes', pasteRoutes);
 
 // Catches errors from middleware, e.g. malformed JSON in the request body.
