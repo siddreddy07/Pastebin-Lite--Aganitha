@@ -5,7 +5,8 @@ import pasteRoutes from './routes/paste.routes.js';
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-app.use(cors());
+// FRONTEND_URL limits CORS to the deployed client; unset (local dev) allows any origin.
+app.use(cors({ origin: process.env.FRONTEND_URL || true }));
 app.use(express.json({ limit: '1mb' })); // bigger bodies get a 413
 app.get('/health', (_req: Request, res: Response) => res.json({ status: 'ok' }));
 app.use('/pastes', pasteRoutes);
