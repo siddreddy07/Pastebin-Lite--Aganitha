@@ -1,0 +1,17 @@
+# dependencies and build output
+node_modules/
+.next/
+dist/
+out/
+*.tsbuildinfo
+next-env.d.ts
+*.log
+
+# secrets (only the example file is committed)
+.env
+.env.*
+!.env.example
+
+# markdown stays local, except the root README
+*.md
+!/README.md
