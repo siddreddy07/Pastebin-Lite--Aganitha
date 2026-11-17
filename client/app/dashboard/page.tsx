@@ -7,7 +7,7 @@ import { ExternalLink, Trash2 } from "lucide-react"
 import { CopyButton } from "@/components/copy-button"
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
-import { getPasteStatus, type PasteStatus } from "@/lib/api"
+import { getPastesStatus, type PasteStatus } from "@/lib/api"
 import { formatTime } from "@/lib/format"
 import { loadPastes, pasteUrl, removePaste, type SavedPaste } from "@/lib/store"
 
@@ -19,8 +19,15 @@ export default function DashboardPage() {
   const refresh = useCallback(async () => {
     const saved = loadPastes()
     setPastes(saved)
-    const results = await Promise.all(saved.map((p) => getPasteStatus(p.id)))
-    setStatuses(Object.fromEntries(saved.map((p, i) => [p.id, results[i]])))
+    if (saved.length === 0) return
+
+    // One request for every saved id.
+    const found = await getPastesStatus(saved.map((p) => p.id))
+    setStatuses(
+      Object.fromEntries(
+        saved.map((p) => [p.id, found === null ? null : (found[p.id] ?? "missing")])
+      )
+    )
   }, [])
 
   useEffect(() => {

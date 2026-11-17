@@ -21,8 +21,20 @@ export function PasteForm() {
 
   const lines = content ? content.split("\n").length : 0
 
+  // Same rules as the backend. Worked out from the current values on every render, so a
+  // message shows only while the field is wrong and disappears as soon as it is fixed.
+  // An empty field shows nothing (both are optional).
+  const expiryError =
+    expiresAt && !(new Date(expiresAt) > new Date()) ? "Expiry must be a date and time in the future." : ""
+  const viewsError =
+    maxViews && !(Number.isInteger(Number(maxViews)) && Number(maxViews) >= 1)
+      ? "Maximum views must be a whole number of at least 1."
+      : ""
+  const canSubmit = content.trim() !== "" && !expiryError && !viewsError && !loading
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!canSubmit) return
     setLoading(true)
     setError("")
     try {
@@ -39,8 +51,15 @@ export function PasteForm() {
         maxViews: paste.maxViews,
       })
       setLink(pasteUrl(paste.id))
-    } catch {
-      setError("Couldn't create the paste. Check that the server is running on port 8080.")
+    } catch (err) {
+      // TypeError = the request never reached the server; anything else is the server's own message.
+      setError(
+        err instanceof TypeError
+          ? "Couldn't reach the server. Check that it is running on port 8080."
+          : err instanceof Error
+            ? err.message
+            : "Couldn't create the paste."
+      )
     } finally {
       setLoading(false)
     }
@@ -83,7 +102,10 @@ export function PasteForm() {
       <div className="overflow-hidden rounded-xl border bg-card shadow-xs focus-within:ring-3 focus-within:ring-ring/40">
         <Textarea
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={(e) => {
+            setContent(e.target.value)
+            setError("")
+          }}
           placeholder="Paste or type anything…"
           spellCheck={false}
           aria-label="Paste content"
@@ -98,17 +120,39 @@ export function PasteForm() {
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="expires">Expires at (optional)</Label>
-          <Input id="expires" type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
+          <Input
+            id="expires"
+            type="datetime-local"
+            value={expiresAt}
+            aria-invalid={!!expiryError}
+            onChange={(e) => {
+              setExpiresAt(e.target.value)
+              setError("")
+            }}
+          />
+          {expiryError && <p className="text-xs text-destructive">{expiryError}</p>}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="views">Maximum views (optional)</Label>
-          <Input id="views" type="number" min={1} placeholder="Unlimited" value={maxViews} onChange={(e) => setMaxViews(e.target.value)} />
+          <Input
+            id="views"
+            type="number"
+            min={1}
+            placeholder="Unlimited"
+            value={maxViews}
+            aria-invalid={!!viewsError}
+            onChange={(e) => {
+              setMaxViews(e.target.value)
+              setError("")
+            }}
+          />
+          {viewsError && <p className="text-xs text-destructive">{viewsError}</p>}
         </div>
       </div>
 
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
 
-      <Button type="submit" size="lg" disabled={loading || !content.trim()}>
+      <Button type="submit" size="lg" disabled={!canSubmit}>
         {loading ? "Creating…" : "Create paste"}
       </Button>
     </form>

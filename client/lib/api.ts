@@ -20,7 +20,11 @@ export async function createPaste(input: {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   })
-  if (!res.ok) throw new Error("Could not create the paste")
+  if (!res.ok) {
+    // The backend sends { error: "..." } for bad input; show that message.
+    const body = await res.json().catch(() => null)
+    throw new Error(body?.error ?? "Could not create the paste")
+  }
   return res.json()
 }
 
@@ -33,13 +37,20 @@ export type PasteStatus = {
   active: boolean
 }
 
-// Current state of a paste. Does not count as a view.
-// "missing" = the server has no such paste; null = the server couldn't be reached.
-export async function getPasteStatus(id: string): Promise<PasteStatus | "missing" | null> {
+// Current state of many pastes in ONE request. Does not count as a view.
+// Returns a map by id; ids the server doesn't know are left out.
+// null = the server couldn't be reached.
+export async function getPastesStatus(ids: string[]): Promise<Record<string, PasteStatus> | null> {
   try {
-    const res = await fetch(`${API_URL}/pastes/${id}/stats`, { cache: "no-store" })
-    if (res.status === 404) return "missing"
-    return res.ok ? res.json() : null
+    const res = await fetch(`${API_URL}/pastes/stats`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+      cache: "no-store",
+    })
+    if (!res.ok) return null
+    const list: PasteStatus[] = await res.json()
+    return Object.fromEntries(list.map((s) => [s.id, s]))
   } catch {
     return null
   }
