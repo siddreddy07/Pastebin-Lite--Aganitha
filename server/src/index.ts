@@ -3,7 +3,7 @@ import cors from 'cors';
 import pasteRoutes from './routes/paste.routes.js';
 
 const app = express();
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
 
 app.use(cors());
 app.use(express.json({ limit: '1mb' })); // bigger bodies get a 413
